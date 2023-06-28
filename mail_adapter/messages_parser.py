@@ -9,4 +9,3 @@ class Message:
 
     def render(self, **kwargs):
         return self.template.render(**kwargs)
-
