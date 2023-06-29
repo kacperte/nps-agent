@@ -1,6 +1,10 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from databases import Database
+
+DATABASE_URL = "postgresql://user:password@localhost:5432/mydatabase"
+database = Database(DATABASE_URL)
 
 
 class MailClient:
