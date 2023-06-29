@@ -34,6 +34,5 @@ async def startup():
 async def shutdown():
     await database.disconnect()
 
+
 app.include_router(tracking_app)
-
-
