@@ -2,8 +2,11 @@ from fastapi import FastAPI
 from mail_adapter.email_client import MailClient
 from tracking.tracker import app as tracking_app
 from databases import Database
+import os
+from dotenv import load_dotenv
 
-DATABASE_URL = "postgresql://user:password@localhost:5432/mydatabase"
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
 database = Database(DATABASE_URL)
 
 app = FastAPI()
