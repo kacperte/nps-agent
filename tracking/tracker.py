@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, HTTPException
 from starlette.responses import FileResponse
 from databases import Database
 from pydantic import BaseModel, EmailStr
@@ -13,7 +13,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 database = Database(DATABASE_URL)
 
 # Create a new FastAPI application
-app = FastAPI()
+router = APIRouter()
 
 
 # Define a Pydantic model for email data
@@ -22,13 +22,13 @@ class Email(BaseModel):
 
 
 # Connect to the database when the application starts
-@app.on_event("startup")
+@router.on_event("startup")
 async def startup():
     await database.connect()
 
 
 # Disconnect from the database when the application shuts down
-@app.on_event("shutdown")
+@router.on_event("shutdown")
 async def shutdown():
     await database.disconnect()
 
@@ -47,11 +47,12 @@ async def register_open(email: Email):
 
 
 # Define a new endpoint for tracking email opens
-@app.get("/track/{email_id}")
-async def track(email_id: Email):
+@router.get("/track/{email_id}")
+async def track(email_id: str):
+    email = Email(email_id=email_id)
     try:
         # Register the email open event
-        await register_open(email_id)
+        await register_open(email)
         # If the tracking pixel image exists, return it as a response
         if os.path.exists("pixel.png"):
             return FileResponse("pixel.png", media_type="image/png")

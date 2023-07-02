@@ -1,9 +1,8 @@
-from fastapi import FastAPI
-from mail_adapter.email_client import MailClient
-from tracking.tracker import app as tracking_app
-from databases import Database
 import os
+from databases import Database
+from fastapi import FastAPI
 from dotenv import load_dotenv
+from tracking.tracker import router as tracking_router
 
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -38,4 +37,4 @@ async def shutdown():
     await database.disconnect()
 
 
-app.include_router(tracking_app)
+app.include_router(tracking_router)
