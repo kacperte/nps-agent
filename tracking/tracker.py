@@ -1,3 +1,4 @@
+from asyncpg.exceptions import UniqueViolationError, DataError, UndefinedTableError
 from fastapi import APIRouter, HTTPException
 from starlette.responses import FileResponse
 from databases import Database
@@ -57,12 +58,19 @@ async def track(email_id: str):
     try:
         # Register the email open event
         await register_open(email)
+    except UniqueViolationError:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    except DataError:
+        raise HTTPException(status_code=400, detail="Invalid data")
+    except UndefinedTableError:
+        raise HTTPException(status_code=500, detail="Table does not exist")
+    except Exception as e:
+        # If any other error occurs, raise an HTTP 500 error with the error message
+        raise HTTPException(status_code=500, detail=str(e))
+    else:
         # If the tracking pixel image exists, return it as a response
         if os.path.exists("pixel.png"):
             return FileResponse("pixel.png", media_type="image/png")
         else:
             # If the tracking pixel image does not exist, raise an HTTP 500 error
             raise HTTPException(status_code=500, detail="Image file not found")
-    except Exception as e:
-        # If any other error occurs, raise an HTTP 500 error with the error message
-        raise HTTPException(status_code=500, detail=str(e))
