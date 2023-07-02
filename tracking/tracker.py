@@ -3,9 +3,6 @@ from starlette.responses import FileResponse
 from databases import Database
 from pydantic import BaseModel, EmailStr
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # Database connection string
 DATABASE_URL = os.getenv("DATABASE_URL")

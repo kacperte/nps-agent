@@ -1,10 +1,9 @@
 import os
 from databases import Database
 from fastapi import FastAPI
-from dotenv import load_dotenv
 from tracking.tracker import router as tracking_router
 
-load_dotenv()
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 database = Database(DATABASE_URL)
 
