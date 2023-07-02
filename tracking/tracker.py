@@ -1,5 +1,5 @@
 from asyncpg.exceptions import UniqueViolationError, DataError, UndefinedTableError
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Path
 from starlette.responses import FileResponse
 from databases import Database
 from pydantic import BaseModel, EmailStr
@@ -20,16 +20,16 @@ class Email(BaseModel):
 
 
 # Register an email open event in the database
-async def register_open(email: Email):
+async def register_open(email_id: EmailStr):
     # Check if the email exists in the sent_emails table
     query = "SELECT * FROM sent_emails WHERE email_id = :email_id"
-    result = await database.fetch_one(query=query, values={"email_id": email.email_id})
+    result = await database.fetch_one(query=query, values={"email_id": email_id})
     if result is None:
         # If the email does not exist, raise an HTTP 400 error
         raise HTTPException(status_code=400, detail="Email not found")
     # Insert a new record into the opens table
     query = "INSERT INTO opens (email_id) VALUES (:email_id)"
-    await database.execute(query=query, values={"email_id": email.email_id})
+    await database.execute(query=query, values={"email_id": email_id})
 
 
 # Connect to the database when the application starts
@@ -53,11 +53,10 @@ async def shutdown():
     "image, the GET request is logged as an 'open' event for that specific email. If the image file does "
     "not exist, a 500 error is returned.",
 )
-async def track(email_id: str):
-    email = Email(email_id=email_id)
+async def track(email_id: EmailStr = Path(...)):
     try:
         # Register the email open event
-        await register_open(email)
+        await register_open(email_id)
     except UniqueViolationError:
         raise HTTPException(status_code=400, detail="Email already registered")
     except DataError:
