@@ -10,24 +10,12 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 database = Database(DATABASE_URL)
 
 # Create a new FastAPI application
-router = APIRouter()
+router = APIRouter(prefix="/track", tags=["tracking"])
 
 
 # Define a Pydantic model for email data
 class Email(BaseModel):
     email_id: EmailStr
-
-
-# Connect to the database when the application starts
-@router.on_event("startup")
-async def startup():
-    await database.connect()
-
-
-# Disconnect from the database when the application shuts down
-@router.on_event("shutdown")
-async def shutdown():
-    await database.disconnect()
 
 
 # Register an email open event in the database
@@ -43,8 +31,27 @@ async def register_open(email: Email):
     await database.execute(query=query, values={"email_id": email.email_id})
 
 
+# Connect to the database when the application starts
+@router.on_event("startup")
+async def startup():
+    await database.connect()
+
+
+# Disconnect from the database when the application shuts down
+@router.on_event("shutdown")
+async def shutdown():
+    await database.disconnect()
+
+
 # Define a new endpoint for tracking email opens
-@router.get("/track/{email_id}")
+@router.get(
+    path="/track/{email_id}",
+    summary="Track Email Opens",
+    description="This endpoint is used to track when an email sent to a user is opened. It works by embedding a 1x1 "
+    "pixel image in the email. When the email client or web browser used to view the email requests the "
+    "image, the GET request is logged as an 'open' event for that specific email. If the image file does "
+    "not exist, a 500 error is returned.",
+)
 async def track(email_id: str):
     email = Email(email_id=email_id)
     try:
