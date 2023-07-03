@@ -29,22 +29,6 @@ class MailClient:
         self.username = username
         self.password = password
         self.database = Database(database_url)
-        # Create a new SMTP client
-        self.server = aiosmtplib.SMTP(self.host, self.port, use_tls=True)
-
-    async def login(self):
-        """
-        Connect to the SMTP server and log in.
-
-        Raises:
-            aiosmtplib.SMTPException: If the connection or login fails.
-        """
-        try:
-            await self.server.connect()
-            await self.server.login(self.username, self.password)
-        except aiosmtplib.SMTPException as e:
-            logger.error(f"Failed to login: {e}")
-            raise
 
     async def send_mail(
         self, recipient_email: str, subject: str, content, project_name
@@ -61,18 +45,17 @@ class MailClient:
         Raises:
             aiosmtplib.SMTPException: If the email fails to send.
         """
-        await self.login()
         try:
-            message = self._compose_message(content, recipient_email, subject)
-            await self.server.send_message(message)
-            await self.add_record_to_db(
-                email_id=recipient_email, date=datetime.now(), projectname=project_name
-            )
+            async with aiosmtplib.SMTP(self.host, self.port, use_tls=True) as server:
+                await server.login(self.username, self.password)
+                message = self._compose_message(content, recipient_email, subject)
+                await server.send_message(message)
+                await self.add_record_to_db(
+                    email_id=recipient_email, date=datetime.now(), projectname=project_name
+                )
         except aiosmtplib.SMTPException as e:
             logger.error(f"Failed to send email: {e}")
             raise
-        finally:
-            await self.server.quit()
 
     def _compose_message(self, content, recipient_email, subject):
         """
