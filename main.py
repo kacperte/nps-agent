@@ -15,6 +15,10 @@ app = FastAPI()
 
 @app.on_event("startup")
 async def startup():
+    """
+    Connect to the database and create tables if they don't exist.
+    This function is run when the FastAPI application starts.
+    """
     await database.connect()
     query = """
         CREATE TABLE IF NOT EXISTS sent_emails(
@@ -36,6 +40,10 @@ async def startup():
 
 @app.on_event("shutdown")
 async def shutdown():
+    """
+    Disconnect from the database.
+    This function is run when the FastAPI application shuts down.
+    """
     await database.disconnect()
 
 
