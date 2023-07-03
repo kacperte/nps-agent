@@ -90,8 +90,7 @@ class MailClient:
 
         return message
 
-    @staticmethod
-    async def add_record_to_db(email_id, date, projectname):
+    async def add_record_to_db(self, email_id, date, projectname):
         """
         Add a record to the sent_emails table in the database.
 
@@ -101,7 +100,7 @@ class MailClient:
             projectname (str): The name of the project.
         """
         query = "INSERT INTO sent_emails (email_id, date, project) VALUES (:email_id,:date, :project)"
-        await database.execute(
+        await self.database.execute(
             query=query,
             values={"email_id": email_id, "date": date, "project": projectname},
         )
