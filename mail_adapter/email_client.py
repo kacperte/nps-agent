@@ -4,6 +4,10 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from databases import Database
 from datetime import datetime
+import logging
+
+# Get the logger for this module
+logger = logging.getLogger(__name__)
 
 
 class MailClient:
@@ -39,7 +43,7 @@ class MailClient:
             await self.server.connect()
             await self.server.login(self.username, self.password)
         except aiosmtplib.SMTPException as e:
-            print(f"Failed to login: {e}")
+            logger.error(f"Failed to login: {e}")
             raise
 
     async def send_mail(
@@ -65,7 +69,7 @@ class MailClient:
                 email_id=recipient_email, date=datetime.now(), projectname=project_name
             )
         except aiosmtplib.SMTPException as e:
-            print(f"Failed to send email: {e}")
+            logger.error(f"Failed to send email: {e}")
             raise
         finally:
             await self.server.quit()

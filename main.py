@@ -2,7 +2,10 @@ import os
 from databases import Database
 from fastapi import FastAPI
 from tracking.tracker import router as tracking_router
+from logger import logging_config
 
+# This will configure logging for the entire application
+logging_config.configure_logging()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 database = Database(DATABASE_URL)

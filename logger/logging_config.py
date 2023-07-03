@@ -1,9 +1,12 @@
 import logging
+import sys
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
-handler = logging.StreamHandler()
-handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-
-logger.addHandler(handler)
+def configure_logging():
+    logging.basicConfig(
+        level=logging.INFO,  # Set the logging level to INFO
+        format="%(asctime)s [%(levelname)s] %(message)s",  # Set the logging format
+        handlers=[
+            logging.StreamHandler(sys.stdout),  # Log to standard output
+        ],
+    )
