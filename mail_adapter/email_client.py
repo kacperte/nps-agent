@@ -5,9 +5,17 @@ from email.mime.multipart import MIMEMultipart
 from databases import Database
 from datetime import datetime
 import logging
+from pydantic import BaseModel, EmailStr, ValidationError
 
 # Get the logger for this module
 logger = logging.getLogger(__name__)
+
+
+class EmailData(BaseModel):
+    recipient_email: EmailStr
+    subject: str
+    content: str
+    project_name: str
 
 
 class MailClient:
@@ -30,29 +38,28 @@ class MailClient:
         self.password = password
         self.database = Database(database_url)
 
-    async def send_mail(
-        self, recipient_email: str, subject: str, content, project_name
-    ):
+    async def send_mail(self, email_data: EmailData):
         """
         Send an email and record the event in the database.
 
         Args:
-            recipient_email (str): The recipient's email address.
-            subject (str): The email subject.
-            content (str): The email content.
-            project_name (str): The name of the project.
+            email_data (EmailData): The email data.
 
         Raises:
             aiosmtplib.SMTPException: If the email fails to send.
+            ValidationError: If the email data is invalid.
         """
         try:
             async with aiosmtplib.SMTP(self.host, self.port, use_tls=True) as server:
                 await server.login(self.username, self.password)
-                message = self._compose_message(content, recipient_email, subject)
+                message = self._compose_message(email_data.content, email_data.recipient_email, email_data.subject)
                 await server.send_message(message)
                 await self.add_record_to_db(
-                    email_id=recipient_email, date=datetime.now(), projectname=project_name
+                    email_id=email_data.recipient_email, date=datetime.now(), projectname=email_data.project_name
                 )
+        except ValidationError as e:
+            logger.error(f"Invalid email data: {e}")
+            raise
         except aiosmtplib.SMTPException as e:
             logger.error(f"Failed to send email: {e}")
             raise
