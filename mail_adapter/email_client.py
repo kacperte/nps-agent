@@ -52,10 +52,14 @@ class MailClient:
         try:
             async with aiosmtplib.SMTP(self.host, self.port, use_tls=True) as server:
                 await server.login(self.username, self.password)
-                message = self._compose_message(email_data.content, email_data.recipient_email, email_data.subject)
+                message = self._compose_message(
+                    email_data.content, email_data.recipient_email, email_data.subject
+                )
                 await server.send_message(message)
                 await self.add_record_to_db(
-                    email_id=email_data.recipient_email, date=datetime.now(), projectname=email_data.project_name
+                    email_id=email_data.recipient_email,
+                    date=datetime.now(),
+                    projectname=email_data.project_name,
                 )
         except ValidationError as e:
             logger.error(f"Invalid email data: {e}")
