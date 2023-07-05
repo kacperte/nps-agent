@@ -5,17 +5,12 @@ from email.mime.multipart import MIMEMultipart
 from databases import Database
 from datetime import datetime
 import logging
-from pydantic import BaseModel, EmailStr, ValidationError
+from pydantic import ValidationError
+from db.models import EmailData
+from db.db_operations import add_record_to_db
 
 # Get the logger for this module
 logger = logging.getLogger(__name__)
-
-
-class EmailData(BaseModel):
-    recipient_email: EmailStr
-    subject: str
-    content: str
-    project_name: str
 
 
 class MailClient:
@@ -56,10 +51,11 @@ class MailClient:
                     email_data.content, email_data.recipient_email, email_data.subject
                 )
                 await server.send_message(message)
-                await self.add_record_to_db(
+                await add_record_to_db(
                     email_id=email_data.recipient_email,
                     date=datetime.now(),
                     projectname=email_data.project_name,
+                    datebase=self.database
                 )
         except ValidationError as e:
             logger.error(f"Invalid email data: {e}")
@@ -88,17 +84,3 @@ class MailClient:
 
         return message
 
-    async def add_record_to_db(self, email_id, date, projectname):
-        """
-        Add a record to the sent_emails table in the database.
-
-        Args:
-            email_id (str): The email ID.
-            date (datetime): The date the email was sent.
-            projectname (str): The name of the project.
-        """
-        query = "INSERT INTO sent_emails (email_id, date, project) VALUES (:email_id,:date, :project)"
-        await self.database.execute(
-            query=query,
-            values={"email_id": email_id, "date": date, "project": projectname},
-        )

@@ -4,6 +4,7 @@ from starlette.responses import FileResponse
 from databases import Database
 from pydantic import BaseModel, EmailStr
 import os
+from db.db_operations import register_open, connect_to_db, disconnect_from_db
 
 # Database connection string
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -14,34 +15,16 @@ database = Database(DATABASE_URL)
 router = APIRouter(prefix="/track", tags=["tracking"])
 
 
-# Define a Pydantic model for email data
-class Email(BaseModel):
-    email_id: EmailStr
-
-
-# Register an email open event in the database
-async def register_open(email_id: EmailStr):
-    # Check if the email exists in the sent_emails table
-    query = "SELECT * FROM sent_emails WHERE email_id = :email_id"
-    result = await database.fetch_one(query=query, values={"email_id": email_id})
-    if result is None:
-        # If the email does not exist, raise an HTTP 400 error
-        raise HTTPException(status_code=400, detail="Email not found")
-    # Insert a new record into the opens table
-    query = "INSERT INTO opens (email_id) VALUES (:email_id)"
-    await database.execute(query=query, values={"email_id": email_id})
-
-
 # Connect to the database when the application starts
 @router.on_event("startup")
 async def startup():
-    await database.connect()
+    await connect_to_db(database)
 
 
 # Disconnect from the database when the application shuts down
 @router.on_event("shutdown")
 async def shutdown():
-    await database.disconnect()
+    await disconnect_from_db(database)
 
 
 # Define a new endpoint for tracking email opens
@@ -56,7 +39,7 @@ async def shutdown():
 async def track(email_id: EmailStr = Path(...)):
     try:
         # Register the email open event
-        await register_open(email_id)
+        await register_open(email_id, database)
     except UniqueViolationError:
         raise HTTPException(status_code=400, detail="Email already registered")
     except DataError:
